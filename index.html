@@ -63,7 +63,7 @@ function harness(gpu) {
     var program = ctx.createProgram(kernelSrc);
 
     try {
-      program.build (device, null, null);
+      program.build ([device], "");
     } catch(e) {
       alert ("Failed to build WebCL program. Error "
              + program.getBuildInfo (device, 
