@@ -5,11 +5,10 @@
 </head>
 <body>
 <script id="dummyLoop" type="text/x-opencl">
-kernel void dummyLoop(global float* input,
-                      global float* output,
-                      const unsigned int count)
+__kernel void dummyLoop(__global float* input,
+                        __global float* output,
+                        const int count)
 {
-   int i = get_global_id(0);
    while(1) {}
 }
 </script>
