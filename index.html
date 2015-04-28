@@ -84,7 +84,7 @@ function harness(gpu) {
       var kernel = program.createKernel ("dummyLoop");
       kernel.setArg (0, bufIn);
       kernel.setArg (1, bufOut);
-      kernel.setArg (2, new Uint32Array([vectorLength]));
+      kernel.setArg (2, new Int32Array([vectorLength]));
 
       // Create command queue using the first available device
       var cmdQueue = ctx.createCommandQueue (device);
