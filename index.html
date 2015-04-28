@@ -5,9 +5,9 @@
 </head>
 <body>
 <script id="dummyLoop" type="text/x-opencl">
-kernel void loop(global float* input,
-                 global float* output,
-                 const unsigned int count)
+kernel void dummyLoop(global float* input,
+                      global float* output,
+                      const unsigned int count)
 {
    int i = get_global_id(0);
    while(1) {}
