@@ -4,32 +4,14 @@
 <title>WebCL Experiment</title>
 </head>
 <body>
-<script id="clProgramLoop" type="text/x-opencl">
+<script id="dummyLoop" type="text/x-opencl">
 kernel void loop(global float* input,
                  global float* output,
                  const unsigned int count)
 {
    int i = get_global_id(0);
-   int u;
-   for (u=0;u<count;u++)
-   {
-        output=output+1;
-   }
+   while(1) {}
 }
-</script>
-<script id="clProgramVectorAdd" type="text/x-opencl">
-  kernel void ckVectorAdd(global uint* vectorIn1, 
-                          global uint* vectorIn2,
-                          global uint* vectorOut,
-                          uint uiVectorWidth) {
-     uint x = get_global_id(0);
-     if (x >= uiVectorWidth)
-     {
-       return;
-    }
-    // add the vector elements
-    vectorOut[x] = vectorIn1[x] + vectorIn2[x];
-  }
 </script>
 <script type="text/javascript">
 function loadKernel(id){
@@ -43,7 +25,7 @@ function loadKernel(id){
   } 
   return kernelSource;
 }
-function main () {
+function main (count) {
   // All output is written to element by id "output"
   var output = document.getElementById("output");
   output.innerHTML = "";
@@ -60,29 +42,22 @@ function main () {
 
     // Generate input vectors
     var vectorLength = 30;
-    var UIvector1 = new Uint32Array(vectorLength);    
-    var UIvector2 = new Uint32Array(vectorLength);
-    for ( var i=0; i<vectorLength;  i=i+1) {
-      UIvector1[i] = Math.floor(Math.random() * 100); //Random number 0..99
-      UIvector2[i] = Math.floor(Math.random() * 100); //Random number 0..99
-    }
-    
-    output.innerHTML += "<br>Vector length = " + vectorLength;
+    var UIvector = new Float32Array(vectorLength);    
 
     // Setup WebCL context using the default device
     var ctx = webcl.createContext ();
                      
     // Reserve buffers
     var bufSize = vectorLength * 4; // size in bytes
-    output.innerHTML += "<br>Buffer size: " + bufSize + " bytes";
-    var bufIn1 = ctx.createBuffer (webcl.MEM_READ_ONLY, bufSize);
-    var bufIn2 = ctx.createBuffer (webcl.MEM_READ_ONLY, bufSize);
+    var bufIn = ctx.createBuffer (webcl.MEM_READ_ONLY, bufSize);
     var bufOut = ctx.createBuffer (webcl.MEM_WRITE_ONLY, bufSize);
 
     // Create and build program for the first device
-    var kernelSrc = loadKernel("clProgramVectorAdd");
+    var kernelSrc = loadKernel("dummyLoop");
     var program = ctx.createProgram(kernelSrc);
-    var device = ctx.getInfo(webcl.CONTEXT_DEVICES)[0];
+
+    // To harness GPU
+    var device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_GPU)[0];
 
     try {
       program.build ([device], "");
@@ -95,49 +70,32 @@ function main () {
                                             webcl.PROGRAM_BUILD_LOG));
       throw e;
     }
-
-    // Create kernel and set arguments
-    var kernel = program.createKernel ("ckVectorAdd");
-    kernel.setArg (0, bufIn1);
-    kernel.setArg (1, bufIn2);    
-    kernel.setArg (2, bufOut);
-    kernel.setArg (3, new Uint32Array([vectorLength]));
-
-    // Create command queue using the first available device
-    var cmdQueue = ctx.createCommandQueue (device);
-    
-    // Write the buffer to OpenCL device memory
-    cmdQueue.enqueueWriteBuffer (bufIn1, false, 0, bufSize, UIvector1);
-    cmdQueue.enqueueWriteBuffer (bufIn2, false, 0, bufSize, UIvector2);
  
     // Init ND-range
     var localWS = [8];
     var globalWS = [Math.ceil (vectorLength / localWS) * localWS];
-
-    output.innerHTML += "<br>Global work item size: " + globalWS;
-    output.innerHTML += "<br>Local work item size: " + localWS;
     
     // Execute (enqueue) kernel
-    cmdQueue.enqueueNDRangeKernel(kernel, globalWS.length, null, 
-                                  globalWS, localWS);
+    while(1) {
+          // Create kernel and set arguments
+      var kernel = program.createKernel ("dummyLoop");
+      kernel.setArg (0, bufIn);
+      kernel.setArg (1, bufOut);
+      kernel.setArg (2, new Uint32Array([vectorLength]));
 
-    // Read the result buffer from OpenCL device
-    outBuffer = new Uint32Array(vectorLength);
-    cmdQueue.enqueueReadBuffer (bufOut, false, 0, bufSize, outBuffer);    
-    cmdQueue.finish (); //Finish all the operations
+      // Create command queue using the first available device
+      var cmdQueue = ctx.createCommandQueue (device);
+      
+      // Write the buffer to OpenCL device memory
+      cmdQueue.enqueueWriteBuffer (bufIn, false, 0, bufSize, UIvector);
 
-    //Print input vectors and result vector
-    output.innerHTML += "<br>Vector1 = "; 
-    for (var i = 0; i < vectorLength; i = i + 1) {
-      output.innerHTML += UIvector1[i] + ", ";
-    }
-    output.innerHTML += "<br>Vector2 = ";
-    for (var i = 0; i < vectorLength; i = i + 1) {
-      output.innerHTML += UIvector2[i] + ", ";
-    }
-    output.innerHTML += "<br>Result = ";
-    for (var i = 0; i < vectorLength; i = i + 1) {
-      output.innerHTML += outBuffer[i] + ", ";
+      cmdQueue.enqueueNDRangeKernel(kernel, globalWS.length, null, 
+                                    globalWS, localWS);
+
+      // Read the result buffer from OpenCL device
+      outBuffer = new Float32Array(vectorLength);
+      cmdQueue.enqueueReadBuffer (bufOut, false, 0, bufSize, outBuffer);    
+      cmdQueue.finish (); //Finish all the operations
     }
 
   } catch(e) {
