@@ -75,24 +75,24 @@ function main () {
     // Reserve buffers
     var bufSize = vectorLength * 4; // size in bytes
     output.innerHTML += "<br>Buffer size: " + bufSize + " bytes";
-    var bufIn1 = ctx.createBuffer (WebCL.MEM_READ_ONLY, bufSize);
-    var bufIn2 = ctx.createBuffer (WebCL.MEM_READ_ONLY, bufSize);
-    var bufOut = ctx.createBuffer (WebCL.MEM_WRITE_ONLY, bufSize);
+    var bufIn1 = ctx.createBuffer (webcl.MEM_READ_ONLY, bufSize);
+    var bufIn2 = ctx.createBuffer (webcl.MEM_READ_ONLY, bufSize);
+    var bufOut = ctx.createBuffer (webcl.MEM_WRITE_ONLY, bufSize);
 
     // Create and build program for the first device
     var kernelSrc = loadKernel("clProgramVectorAdd");
     var program = ctx.createProgram(kernelSrc);
-    var device = ctx.getInfo(WebCL.CONTEXT_DEVICES)[0];
+    var device = ctx.getInfo(webcl.CONTEXT_DEVICES)[0];
 
     try {
       program.build ([device], "");
     } catch(e) {
       alert ("Failed to build WebCL program. Error "
              + program.getBuildInfo (device, 
-                                            WebCL.PROGRAM_BUILD_STATUS)
+                                            webcl.PROGRAM_BUILD_STATUS)
              + ":  " 
              + program.getBuildInfo (device, 
-                                            WebCL.PROGRAM_BUILD_LOG));
+                                            webcl.PROGRAM_BUILD_LOG));
       throw e;
     }
 
