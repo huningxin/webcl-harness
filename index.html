@@ -44,8 +44,15 @@ function harness(gpu) {
     var vectorLength = 30;
     var UIvector = new Float32Array(vectorLength);    
 
+    // To harness GPU
+    var device;
+    if (typeof(gpu) !== 'undefined' && gpu)
+      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_GPU)[0];
+    else
+      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_CPU)[0];
+
     // Setup WebCL context using the default device
-    var ctx = webcl.createContext ();
+    var ctx = webcl.createContext (device);
                      
     // Reserve buffers
     var bufSize = vectorLength * 4; // size in bytes
@@ -56,15 +63,8 @@ function harness(gpu) {
     var kernelSrc = loadKernel("dummyLoop");
     var program = ctx.createProgram(kernelSrc);
 
-    // To harness GPU
-    var device;
-    if (typeof(gpu) !== 'undefined' && gpu)
-      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_GPU)[0];
-    else
-      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_CPU)[0];
-
     try {
-      program.build ([device], "");
+      program.build (device, null, null);
     } catch(e) {
       alert ("Failed to build WebCL program. Error "
              + program.getBuildInfo (device, 
