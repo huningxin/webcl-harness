@@ -25,7 +25,7 @@ function loadKernel(id){
   } 
   return kernelSource;
 }
-function main (count) {
+function harness(gpu) {
   // All output is written to element by id "output"
   var output = document.getElementById("output");
   output.innerHTML = "";
@@ -57,7 +57,11 @@ function main (count) {
     var program = ctx.createProgram(kernelSrc);
 
     // To harness GPU
-    var device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_GPU)[0];
+    var device;
+    if (typeof(gpu) !== 'undefined' && gpu)
+      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_GPU)[0];
+    else
+      device = webcl.getPlatforms()[0].getDevices(webcl.DEVICE_TYPE_CPU)[0];
 
     try {
       program.build ([device], "");
@@ -104,10 +108,12 @@ function main (count) {
     throw e;
   }
 }
-window.onload = function() {
-  main();
-}
+
 </script>
+<div>
+  <button id='gpu' onclick='harness(true);' style='font-size: 30pt;'>Harness GPU</button>
+  <button id='cpu' onclick='harness(false);' style='font-size: 30pt;'>Harness CPU</button>
+</div>
 <div id="output">
 </div>
 </body>
